@@ -1,16 +1,19 @@
 #include <stdio.h>
 
 #include "common.h"
+#include "memory.h"
 #include "vm.h"
 #include "debug.h"
 
 VM vm; 
 
 static void resetStack() {
-  vm.stackTop = vm.stack;
+  vm.stackCount = 0;
 }
 
 void initVM() {
+  vm.stack = NULL;
+  vm.stackCap = 0;
   resetStack();
 }
 
@@ -18,13 +21,18 @@ void freeVM() {
 }
 
 void push(Value value) {
-  *vm.stackTop = value;
-  vm.stackTop++;
+  if (vm.stackCap < vm.stackCount + 1) {
+    int oldCap = vm.stackCap;
+    vm.stackCap = GROW_CAPACITY(oldCap);
+    vm.stack = GROW_ARRAY(Value, vm.stack, oldCap, vm.stackCap);
+  }
+  vm.stack[vm.stackCount] = value;
+  vm.stackCount++;
 }
 
 Value pop() {
-  vm.stackTop--;
-  return *vm.stackTop;
+  vm.stackCount--;
+  return vm.stack[vm.stackCount];
 }
 
 
@@ -41,11 +49,16 @@ static InterpretResult run() {
   for (;;) {
 #ifdef DEBUG_TRACE_EXECUTION
     printf("          ");
-      for (Value* slot = vm.stack; slot < vm.stackTop; slot++) {
+      // for (Value* slot = vm.stack; slot < vm.stackTop; slot++) {
+      //   printf("[ ");
+      //   printValue(*slot);
+      //   printf(" ]");
+      // }
+      for (Value *slot = vm.stack; slot < vm.stack + vm.stackCount; slot++) {
         printf("[ ");
         printValue(*slot);
         printf(" ]");
-      }
+}
     printf("\n");
     disassembleInstruction(vm.chunk,
                            (int)(vm.ip - vm.chunk->code));
