@@ -10,7 +10,7 @@
 #include "object.h"
 #include "memory.h"
 
-VM vm; 
+VM vm;
 
 static Value clockNative(int argCount, Value* args) {
   return NUMBER_VAL((double)clock() / CLOCKS_PER_SEC);
@@ -61,6 +61,10 @@ static void defineNative(const char* name, NativeFn function) {
 void initVM() {
   resetStack();
   vm.objects = NULL;
+
+  vm.grayCount = 0;
+  vm.grayCapacity = 0;
+  vm.grayStack = NULL;
 
   initTable(&vm.globals);
   initTable(&vm.strings);
